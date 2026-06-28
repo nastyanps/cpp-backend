@@ -38,8 +38,40 @@ namespace {
     }
 
     StringResponse HandleRequest(StringRequest&& req) {
-        // Подставьте сюда код из синхронной версии HTTP-сервера
-        return MakeStringResponse(http::status::ok, "OK"sv, req.version(), req.keep_alive());
+        using namespace std::literals;
+
+        // Обработка только GET и HEAD
+        if (req.method() != http::verb::get && req.method() != http::verb::head) {
+            StringResponse response(http::status::method_not_allowed, req.version());
+            response.set(http::field::content_type, ContentType::TEXT_HTML);
+            response.set(http::field::allow, "GET, HEAD"sv);
+            response.body() = "Invalid method"sv;
+            response.content_length(response.body().size());
+            response.keep_alive(req.keep_alive());
+            return response;
+        }
+
+        // Формируем тело ответа: "Hello, {target}" без ведущего '/'
+        std::string_view target = req.target();
+        if (!target.empty() && target.front() == '/') {
+            target.remove_prefix(1);
+        }
+
+        std::string body = "Hello, "s + std::string(target);
+
+        StringResponse response(http::status::ok, req.version());
+        response.set(http::field::content_type, ContentType::TEXT_HTML);
+        response.body() = body;
+        response.content_length(body.size());
+        response.keep_alive(req.keep_alive());
+
+        // Для HEAD тело должно быть пустым, но Content-Length — как у GET
+        if (req.method() == http::verb::head) {
+            response.body() = ""s;
+            // content_length уже установлен правильно
+        }
+
+        return response;
     }
 
     // Запускает функцию fn на n потоках, включая текущий
@@ -73,7 +105,7 @@ int main() {
     const auto address = net::ip::make_address("0.0.0.0");
     constexpr net::ip::port_type port = 8080;
     http_server::ServeHttp(ioc, { address, port }, [](auto&& req, auto&& sender) {
-        // sender(HandleRequest(std::forward<decltype(req)>(req)));
+        sender(HandleRequest(std::forward<decltype(req)>(req)));
         });
 
     // Эта надпись сообщает тестам о том, что сервер запущен и готов обрабатывать запросы
