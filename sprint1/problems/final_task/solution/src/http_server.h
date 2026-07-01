@@ -83,6 +83,9 @@ namespace http_server {
         void Close() {
             beast::error_code ec;
             stream_.socket().shutdown(tcp::socket::shutdown_send, ec);
+	    if (ec) {
+		ReportError(ec, "close"sv);
+	    }
         }
 
         virtual void HandleRequest(HttpRequest&& request) = 0;
