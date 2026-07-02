@@ -30,6 +30,11 @@ http::response<http::string_body> MakeJsonResponse(http::status status,
     unsigned version,
     bool keep_alive);
 
+http::response<http::string_body> MakeTextResponse(http::status status,
+    std::string_view text,
+    unsigned version,
+    bool keep_alive);
+
 http::response<http::string_body> HandleApiRequest(
     const std::string& target,
     unsigned version,
