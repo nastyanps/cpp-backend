@@ -13,10 +13,8 @@ COPY conanfile.txt /app/
 RUN mkdir /app/build && cd /app/build && \
     conan install .. --build=missing
 
-# Папка data больше не нужна
 COPY ./src /app/src
 COPY CMakeLists.txt /app/
-
 RUN cd /app/build && \
     cmake -DCMAKE_BUILD_TYPE=Release .. && \
     cmake --build .
@@ -29,9 +27,10 @@ RUN groupadd -r www && useradd -r -g www www
 USER www
 
 # Скопируем приложение со сборочного контейнера в директорию /app.
-# Не забываем также папку data, она пригодится.
+# Также нужны data и static — конфиг карт и статические файлы клиента.
 COPY --from=build /app/build/bin/game_server /app/
 COPY ./data /app/data
+COPY ./static /app/static
 
-# Запускаем игровой сервер
-ENTRYPOINT ["/app/game_server", "/app/data/config.json"]
+# Запускаем игровой сервер: конфиг + путь к статике
+ENTRYPOINT ["/app/game_server", "/app/data/config.json", "/app/static"]
