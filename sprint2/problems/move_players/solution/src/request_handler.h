@@ -1,8 +1,6 @@
 #pragma once
 #include "http_server.h"
 #include "api_handler.h"
-#include "application.h"
-
 #include <boost/asio/strand.hpp>
 #include <boost/asio/dispatch.hpp>
 #include <boost/asio/ip/tcp.hpp>
@@ -33,7 +31,6 @@ public:
         , api_strand_{api_strand}
         , api_handler_{std::make_shared<ApiHandler>(application)} {
     }
-
     RequestHandler(const RequestHandler&) = delete;
     RequestHandler& operator=(const RequestHandler&) = delete;
 
@@ -67,10 +64,17 @@ private:
         const auto version = req.version();
         const auto keep_alive = req.keep_alive();
 
+        auto make_text_response = [version, keep_alive](http::status status, std::string_view text) {
+            http::response<http::string_body> response(status, version);
+            response.set(http::field::content_type, "text/plain");
+            response.body() = std::string(text);
+            response.content_length(response.body().size());
+            response.keep_alive(keep_alive);
+            return response;
+        };
+
         if (method != http::verb::get && method != http::verb::head) {
-            send(MakeJsonResponse(http::status::method_not_allowed,
-                                   MakeErrorBody("invalidMethod", "Only GET and HEAD are expected"),
-                                   version, keep_alive));
+            send(make_text_response(http::status::method_not_allowed, "Only GET and HEAD are expected"));
             return;
         }
 
@@ -79,8 +83,7 @@ private:
         fs::path file_path = fs::weakly_canonical(static_root_ / rel_path);
 
         if (!IsSubPath(file_path, static_root_)) {
-            send(MakeJsonResponse(http::status::bad_request,
-                                   MakeErrorBody("badRequest", "Bad request"), version, keep_alive));
+            send(make_text_response(http::status::bad_request, "Bad request"));
             return;
         }
 
@@ -90,8 +93,7 @@ private:
         }
 
         if (!fs::exists(file_path, fs_ec) || !fs::is_regular_file(file_path, fs_ec)) {
-            send(MakeJsonResponse(http::status::not_found,
-                                   MakeErrorBody("fileNotFound", "File not found"), version, keep_alive));
+            send(make_text_response(http::status::not_found, "File not found"));
             return;
         }
 
@@ -110,8 +112,7 @@ private:
         sys::error_code ec;
         file.open(file_path.string().c_str(), beast::file_mode::read, ec);
         if (ec) {
-            send(MakeJsonResponse(http::status::not_found,
-                                   MakeErrorBody("fileNotFound", "File not found"), version, keep_alive));
+            send(make_text_response(http::status::not_found, "File not found"));
             return;
         }
 
