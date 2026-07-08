@@ -398,10 +398,11 @@ public:
     }
 
     GameSession& FindOrCreateSession(const Map::Id& map_id) {
-        for (auto& session : sessions_) {
-            if (session->GetMap()->GetId() == map_id) {
-                return *session;
-            }
+        auto it = std::find_if(sessions_.begin(), sessions_.end(), [&map_id](const auto& session) {
+            return session->GetMap()->GetId() == map_id;
+        });
+        if (it != sessions_.end()) {
+            return **it;
         }
         const Map* map = FindMap(map_id);
         sessions_.push_back(std::make_unique<GameSession>(map, randomize_spawn_points_));

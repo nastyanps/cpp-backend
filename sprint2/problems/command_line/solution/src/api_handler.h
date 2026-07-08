@@ -35,7 +35,7 @@ private:
     StringResponse HandleStateRequest(const StringRequest& req);
     StringResponse HandleActionRequest(const StringRequest& req);
     StringResponse HandleTickRequest(const StringRequest& req);
-    std::optional<app::Token> TryExtractToken(const StringRequest& req);
+    static std::optional<app::Token> TryExtractToken(const StringRequest& req);
 
     template <typename Fn>
     StringResponse ExecuteAuthorized(const StringRequest& req, Fn&& action) {

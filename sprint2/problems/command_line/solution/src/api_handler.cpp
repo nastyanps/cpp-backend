@@ -1,6 +1,7 @@
 #include "api_handler.h"
 #include <cctype>
 #include <stdexcept>
+#include <algorithm>
 
 namespace http_handler {
 
@@ -33,6 +34,7 @@ std::string DirectionToString(model::Direction dir) {
         case model::Direction::WEST: return "L";
         case model::Direction::EAST: return "R";
     }
+    assert(false);
     return "U";
 }
 }  // namespace
@@ -51,10 +53,10 @@ std::optional<app::Token> ApiHandler::TryExtractToken(const StringRequest& req) 
     if (token_str.size() != 32) {
         return std::nullopt;
     }
-    for (char c : token_str) {
-        if (!std::isxdigit(static_cast<unsigned char>(c))) {
-            return std::nullopt;
-        }
+    if (std::any_of(token_str.begin(), token_str.end(), [](char c) {
+               return !std::isxdigit(static_cast<unsigned char>(c));
+        })) {
+        return std::nullopt;
     }
     return app::Token{token_str};
 }
