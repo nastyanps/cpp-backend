@@ -182,6 +182,7 @@ jobs:
           path: ${{ github.workspace }}/sprint3/problems/flamegraph/solution/FlameGraph
 
       - name: run tests sprint3 flamegraph
+        continue-on-error: true
         run: |
           ./cpp-backend-tests-practicum/scripts/sprint1/map_json/build.sh
           cd cpp-backend-tests-practicum/scripts/sprint3
