@@ -68,7 +68,7 @@ jobs:
           cd cpp-backend-tests-practicum/scripts/sprint1
           ./map_json/run.sh
 
-       - name: run tests sprint1 final_task
+      - name: run tests sprint1 final_task
         run: |
           cd cpp-backend-tests-practicum/scripts/sprint1
           ./final_task/run.sh
