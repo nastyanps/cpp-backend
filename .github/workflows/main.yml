@@ -67,7 +67,7 @@ jobs:
         run: |
           cd cpp-backend-tests-practicum/scripts/sprint1
           ./map_json/run.sh
-	
+
       - name: Upload map_json binary
         uses: actions/upload-artifact@v3
         with:
