@@ -14,6 +14,7 @@ RUN mkdir /app/build && cd /app/build && \
     conan install .. --build=missing
 
 COPY ./src /app/src
+COPY ./tests /app/tests
 COPY CMakeLists.txt /app/
 RUN cd /app/build && \
     cmake -DCMAKE_BUILD_TYPE=Release .. && \
