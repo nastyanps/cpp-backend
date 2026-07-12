@@ -93,6 +93,12 @@ StringResponse ApiHandler::HandleApiRequest(const StringRequest& req) {
 StringResponse ApiHandler::HandleMapsRequest(const StringRequest& req, std::string_view target) {
     unsigned version = req.version();
     bool keep_alive = req.keep_alive();
+    
+    if (req.method() != http::verb::get && req.method() != http::verb::head) {
+        return MakeJsonResponse(http::status::method_not_allowed,
+                                 MakeErrorBody("invalidMethod", "Invalid method"),
+                                 version, keep_alive, "GET, HEAD"sv);
+    }
 
     if (target == "/api/v1/maps") {
         json::array maps_array;
