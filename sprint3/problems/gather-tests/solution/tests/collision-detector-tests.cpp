@@ -260,13 +260,13 @@ SCENARIO("Item collection detection", "[collision-detector]") {
     }
 
     GIVEN("multiple gatherers passing near the same item") {
-        // Два собирателя проходят мимо одного предмета - должно быть два события.
+        // Оба собирателя проходят точно через предмет (5,0) - должно быть два события.
         std::vector<collision_detector::Item> items = {
             {geom::Point2D{5.0, 0.0}, 0.1}
         };
         std::vector<collision_detector::Gatherer> gatherers = {
             {geom::Point2D{0.0, 0.0}, geom::Point2D{10.0, 0.0}, 0.5},
-            {geom::Point2D{0.0, 10.0}, geom::Point2D{10.0, 0.0}, 0.5}
+            {geom::Point2D{5.0, -10.0}, geom::Point2D{5.0, 10.0}, 0.5}
         };
         TestProvider provider(items, gatherers);
 
