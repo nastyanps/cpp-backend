@@ -8,6 +8,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <iterator>
 
 #include "loot_generator.h"
 #include "tagged.h"
@@ -385,55 +386,7 @@ private:
         Position new_pos;
     };
 
-    std::vector<DogMove> ComputeMoves(std::chrono::milliseconds time_delta) {
-        std::vector<DogMove> moves;
-        const double dt_seconds = std::chrono::duration<double>(time_delta).count();
-
-        for (auto& dog_ptr : dogs_) {
-            Position old_pos = dog_ptr->GetPosition();
-            Speed speed = dog_ptr->GetSpeed();
-
-            if (speed.vx == 0.0 && speed.vy == 0.0) {
-                moves.push_back(DogMove{dog_ptr.get(), old_pos, old_pos});
-                continue;
-            }
-
-            double new_x = old_pos.x + speed.vx * dt_seconds;
-            double new_y = old_pos.y + speed.vy * dt_seconds;
-
-            double min_x = old_pos.x, max_x = old_pos.x, min_y = old_pos.y, max_y = old_pos.y;
-            bool on_road = false;
-            constexpr double eps = 1e-9;
-
-            for (const auto& road : map_->GetRoads()) {
-                auto b = road.GetBounds();
-                if (old_pos.x >= b.x_min - eps && old_pos.x <= b.x_max + eps &&
-                    old_pos.y >= b.y_min - eps && old_pos.y <= b.y_max + eps) {
-                    on_road = true;
-                    min_x = std::min(min_x, b.x_min);
-                    max_x = std::max(max_x, b.x_max);
-                    min_y = std::min(min_y, b.y_min);
-                    max_y = std::max(max_y, b.y_max);
-                }
-            }
-
-            Position new_pos = old_pos;
-            if (on_road) {
-                double clamped_x = std::clamp(new_x, min_x, max_x);
-                double clamped_y = std::clamp(new_y, min_y, max_y);
-                bool stopped = (clamped_x != new_x) || (clamped_y != new_y);
-
-                new_pos = Position{clamped_x, clamped_y};
-                dog_ptr->SetPosition(new_pos);
-                if (stopped) {
-                    dog_ptr->SetSpeed(Speed{0.0, 0.0});
-                }
-            }
-
-            moves.push_back(DogMove{dog_ptr.get(), old_pos, new_pos});
-        }
-        return moves;
-    }
+    std::vector<DogMove> ComputeMoves(std::chrono::milliseconds time_delta);
 
     class CollisionProvider : public collision_detector::ItemGathererProvider {
     public:
@@ -486,11 +439,10 @@ private:
     void ProcessCollisions(const std::vector<DogMove>& moves) {
         // Собиратель без перемещения не участвует в столкновениях.
         std::vector<DogMove> active_moves;
-        for (const auto& m : moves) {
-            if (m.old_pos.x != m.new_pos.x || m.old_pos.y != m.new_pos.y) {
-                active_moves.push_back(m);
-            }
-        }
+        std::copy_if(moves.begin(), moves.end(), std::back_inserter(active_moves),
+                      [](const DogMove& m) {
+                          return m.old_pos.x != m.new_pos.x || m.old_pos.y != m.new_pos.y;
+                      });
         if (active_moves.empty()) {
             return;
         }
@@ -522,13 +474,13 @@ private:
             }
         }
 
-        if (std::any_of(item_collected.begin(), item_collected.end(), [](bool v) { return v; })) {
+        if (std::find(item_collected.begin(), item_collected.end(), true) != item_collected.end()) {
             std::vector<LostObject> remaining;
-            for (size_t i = 0; i < lost_objects_.size(); ++i) {
-                if (!item_collected[i]) {
-                    remaining.push_back(lost_objects_[i]);
-                }
-            }
+            size_t idx = 0;
+            std::copy_if(lost_objects_.begin(), lost_objects_.end(), std::back_inserter(remaining),
+                          [&item_collected, &idx](const LostObject&) {
+                              return !item_collected[idx++];
+                          });
             lost_objects_ = std::move(remaining);
         }
     }

@@ -131,11 +131,11 @@ model::Game LoadGame(const std::filesystem::path& json_path, bool randomize_spaw
             loot_values.reserve(loot_types.size());
             for (const auto& loot_type_val : loot_types) {
                 const auto& loot_type_obj = loot_type_val.as_object();
-                unsigned value = 0;
+                unsigned item_value = 0;
                 if (loot_type_obj.contains("value")) {
-                    value = static_cast<unsigned>(loot_type_obj.at("value").as_int64());
+                    item_value = static_cast<unsigned>(loot_type_obj.at("value").as_int64());
                 }
-                loot_values.push_back(value);
+                loot_values.push_back(item_value);
             }
             map.SetLootValues(std::move(loot_values));
         }

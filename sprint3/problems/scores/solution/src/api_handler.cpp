@@ -186,7 +186,7 @@ StringResponse ApiHandler::HandleJoinRequest(const StringRequest& req) {
         const auto& obj = value.as_object();
         user_name = std::string(obj.at("userName").as_string());
         map_id_str = std::string(obj.at("mapId").as_string());
-    } catch (...) {
+    } catch (const std::exception&) {
         return MakeJsonResponse(http::status::bad_request,
                                  MakeErrorBody("invalidArgument", "Join game request parse error"),
                                  version, keep_alive);
