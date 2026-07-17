@@ -3,10 +3,15 @@
 #include "../domain/author.h"
 #include "../domain/book.h"
 
+#include <stdexcept>
+
 namespace app {
 using namespace domain;
 
 void UseCasesImpl::AddAuthor(const std::string& name) {
+    if (name.empty()) {
+        throw std::invalid_argument("Author name is empty");
+    }
     authors_.Save({AuthorId::New(), name});
 }
 
