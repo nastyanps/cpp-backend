@@ -28,6 +28,10 @@ std::ostream& operator<<(std::ostream& out, const BookInfo& book) {
 
 }  // namespace detail
 
+namespace {
+struct AuthorDeclined {};
+}  // namespace
+
 template <typename T>
 void PrintVector(std::ostream& out, const std::vector<T>& vector) {
     int i = 1;
@@ -104,7 +108,7 @@ std::optional<std::string> View::GetOrSelectAuthorId(std::istream& cmd_input) co
     std::getline(input_, answer);
     boost::algorithm::trim(answer);
     if (answer != "y"s && answer != "Y"s) {
-        return std::nullopt;
+        throw AuthorDeclined{};
     }
     use_cases_.AddAuthor(author_name);
     auto new_author = use_cases_.GetAuthorByName(author_name);
@@ -122,8 +126,16 @@ bool View::AddBook(std::istream& cmd_input) const {
         boost::algorithm::trim(params.title);
 
         output_ << "Enter author name or empty line to select from list:"sv << std::endl;
-        auto author_id = GetOrSelectAuthorId(cmd_input);
-        params.tags = GetTags(cmd_input);
+
+        std::optional<std::string> author_id;
+        try {
+            author_id = GetOrSelectAuthorId(cmd_input);
+        } catch (const AuthorDeclined&) {
+            output_ << "Failed to add book"sv << std::endl;
+            return true;
+        }
+
+        params.tags = GetTags(cmd_input);  // всегда читаем теги, чтобы не оставлять "хвост" в stdin
 
         if (!author_id) {
             output_ << "Failed to add book"sv << std::endl;
