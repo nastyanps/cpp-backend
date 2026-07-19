@@ -123,12 +123,13 @@ bool View::AddBook(std::istream& cmd_input) const {
 
         output_ << "Enter author name or empty line to select from list:"sv << std::endl;
         auto author_id = GetOrSelectAuthorId(cmd_input);
+        params.tags = GetTags(cmd_input);
+
         if (!author_id) {
             output_ << "Failed to add book"sv << std::endl;
             return true;
         }
         params.author_id = *author_id;
-        params.tags = GetTags(cmd_input);
 
         use_cases_.AddBook(params.author_id, params.title, params.publication_year, params.tags);
     } catch (const std::exception&) {
@@ -328,6 +329,7 @@ bool View::DeleteBook(std::istream& cmd_input) const {
 bool View::EditBook(std::istream& cmd_input) const {
     auto book = GetOrSelectBook(cmd_input);
     if (!book) {
+        output_ << "Book not found"sv << std::endl;
         return true;
     }
 
@@ -365,7 +367,7 @@ bool View::EditBook(std::istream& cmd_input) const {
             << "):"sv << std::endl;
     std::string tags_line;
     std::getline(input_, tags_line);
-    std::vector<std::string> new_tags = tags_line.empty() ? details->tags : ParseTags(tags_line);
+    std::vector<std::string> new_tags = ParseTags(tags_line);
 
     if (!use_cases_.EditBook(book->id, new_title, new_year, new_tags)) {
         output_ << "Book not found"sv << std::endl;
