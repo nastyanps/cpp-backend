@@ -81,13 +81,13 @@ std::vector<std::string> View::ParseTags(const std::string& raw) const {
 std::vector<std::string> View::GetTags(std::istream& cmd_input) const {
     output_ << "Enter tags (comma separated):"sv << std::endl;
     std::string line;
-    std::getline(cmd_input, line);
+    std::getline(input_, line);
     return ParseTags(line);
 }
 
 std::optional<std::string> View::GetOrSelectAuthorId(std::istream& cmd_input) const {
     std::string author_name;
-    std::getline(cmd_input, author_name);
+    std::getline(input_, author_name);
     boost::algorithm::trim(author_name);
 
     if (author_name.empty()) {
