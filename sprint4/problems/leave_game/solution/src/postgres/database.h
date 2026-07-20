@@ -9,7 +9,7 @@ namespace postgres {
 
 class Database {
 public:
-    explicit Database(const std::string& db_url, size_t pool_size);
+    Database(const std::string& db_url, size_t pool_size);
 
     RecordsRepository& GetRecords() & {
         return records_;
@@ -17,7 +17,7 @@ public:
 
 private:
     std::unique_ptr<ConnectionPool> pool_;
-    RecordsRepository records_{*pool_};
+    RecordsRepository records_;
 };
 
 }  // namespace postgres

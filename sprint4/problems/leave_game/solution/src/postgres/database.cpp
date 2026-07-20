@@ -6,10 +6,11 @@ namespace postgres {
 
 using pqxx::operator"" _zv;
 
-Database::Database(const std::string& db_url, size_t pool_size) {
-    pool_ = std::make_unique<ConnectionPool>(pool_size, [&db_url] {
-        return std::make_shared<pqxx::connection>(db_url);
-    });
+Database::Database(const std::string& db_url, size_t pool_size)
+    : pool_{std::make_unique<ConnectionPool>(pool_size, [&db_url] {
+          return std::make_shared<pqxx::connection>(db_url);
+      })}
+    , records_{*pool_} {
 
     auto conn = pool_->GetConnection();
     pqxx::work work{*conn};
