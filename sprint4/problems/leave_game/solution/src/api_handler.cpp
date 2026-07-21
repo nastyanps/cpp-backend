@@ -435,7 +435,14 @@ StringResponse ApiHandler::HandleRecordsRequest(const StringRequest& req, std::s
                                  version, keep_alive);
     }
 
-    auto records = db_.GetRecords().GetRecords(start, max_items);
+    std::vector<postgres::RecordEntry> records;
+    try {
+        records = db_.GetRecords().GetRecords(start, max_items);
+    } catch (const std::exception&) {
+        return MakeJsonResponse(http::status::internal_server_error,
+                                 MakeErrorBody("internalError", "Failed to fetch records"),
+                                 version, keep_alive);
+    }
 
     std::string body = "[";
     bool first = true;

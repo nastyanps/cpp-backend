@@ -32,12 +32,22 @@ namespace {
 template <typename Fn>
 void RunWorkers(unsigned n, const Fn& fn) {
     n = std::max(1u, n);
+    auto safe_fn = [&fn] {
+        try {
+            fn();
+        } catch (const std::exception& ex) {
+            json::object exit_data;
+            exit_data["code"] = EXIT_FAILURE;
+            exit_data["exception"] = ex.what();
+            logging_json::LogEvent("worker thread exited with exception"sv, exit_data);
+        }
+    };
     std::vector<std::jthread> workers;
     workers.reserve(n - 1);
     while (--n) {
-        workers.emplace_back(fn);
+        workers.emplace_back(safe_fn);
     }
-    fn();
+    safe_fn();
 }
 
 struct Args {

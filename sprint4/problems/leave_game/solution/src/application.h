@@ -107,7 +107,11 @@ public:
                 for (const auto& info : retired) {
                     retired_infos.push_back(RetiredPlayerInfo{info.name, info.score, info.play_time_seconds});
                 }
-                listener_->OnPlayersRetired(retired_infos);
+                try {
+                    listener_->OnPlayersRetired(retired_infos);
+                } catch (const std::exception&) {
+                    
+                }
             }
         }
     }
