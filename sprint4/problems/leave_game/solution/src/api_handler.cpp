@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <chrono>
+#include <cstdio>
 
 namespace http_handler {
 
@@ -58,6 +59,23 @@ std::optional<int> ParseQueryParam(std::string_view query, std::string_view key)
         pos = query.find(key, pos + 1);
     }
     return std::nullopt;
+}
+
+std::string FormatPlayTime(double value) {
+    char buf[64];
+    std::snprintf(buf, sizeof(buf), "%.6f", value);
+    std::string s(buf);
+
+    size_t dot = s.find('.');
+    if (dot != std::string::npos) {
+        size_t last_non_zero = s.find_last_not_of('0');
+        if (last_non_zero == dot) {
+            s.erase(dot);
+        } else {
+            s.erase(last_non_zero + 1);
+        }
+    }
+    return s;
 }
 
 }  // namespace
@@ -419,16 +437,27 @@ StringResponse ApiHandler::HandleRecordsRequest(const StringRequest& req, std::s
 
     auto records = db_.GetRecords().GetRecords(start, max_items);
 
-    json::array result;
+    std::string body = "[";
+    bool first = true;
     for (const auto& record : records) {
-        json::object entry;
-        entry["name"] = record.name;
-        entry["score"] = record.score;
-        entry["playTime"] = record.play_time_seconds;
-        result.push_back(std::move(entry));
-    }
+        if (!first) {
+            body += ",";
+        }
+        first = false;
 
-    std::string body = json::serialize(result);
+        json::object name_only;
+        name_only["name"] = record.name;
+        std::string name_json = json::serialize(name_only["name"]);
+
+        body += "{\"name\":";
+        body += name_json;
+        body += ",\"score\":";
+        body += std::to_string(record.score);
+        body += ",\"playTime\":";
+        body += FormatPlayTime(record.play_time_seconds);
+        body += "}";
+    }
+    body += "]";
 
     StringResponse response{http::status::ok, version};
     response.set(http::field::content_type, "application/json");
