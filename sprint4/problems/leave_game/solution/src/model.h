@@ -350,6 +350,7 @@ struct LostObject {
 class GameSession {
 public:
     struct RetiredDogInfo {
+        Dog::Id id;
         std::string name;
         unsigned score;
         double play_time_seconds;
@@ -382,6 +383,12 @@ public:
 
     std::vector<RetiredDogInfo> Tick(std::chrono::milliseconds time_delta,
                                       std::chrono::milliseconds retirement_time);
+
+    void RemoveDog(Dog::Id dog_id) {
+        std::erase_if(dogs_, [dog_id](const std::unique_ptr<Dog>& dog_ptr) {
+            return dog_ptr->GetId() == dog_id;
+        });
+    }
 
 private:
     struct DogMove {
@@ -454,6 +461,17 @@ public:
 
     GameSession& FindOrCreateSession(const Map::Id& map_id);
 
+    GameSession* FindSessionByDogId(Dog::Id dog_id) {
+        for (auto& session : sessions_) {
+            for (const auto& dog_ptr : session->GetDogs()) {
+                if (dog_ptr->GetId() == dog_id) {
+                    return session.get();
+                }
+            }
+        }
+        return nullptr;
+    }
+
     std::vector<GameSession::RetiredDogInfo> Tick(std::chrono::milliseconds time_delta);
 
     void SetRetirementTime(std::chrono::milliseconds retirement_time) noexcept {
@@ -470,7 +488,7 @@ private:
     std::vector<Map> maps_;
     MapIdToIndex map_id_to_index_;
     std::vector<std::unique_ptr<GameSession>> sessions_;
-    std::chrono::milliseconds retirement_time_{60000};  // 1 минута по умолчанию
+    std::chrono::milliseconds retirement_time_{60000};
 };
 
 }  // namespace model

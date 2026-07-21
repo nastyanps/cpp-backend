@@ -98,20 +98,30 @@ public:
 
     void Tick(std::chrono::milliseconds time_delta) {
         auto retired = game_.Tick(time_delta);
-        if (!retired.empty()) {
-            for (const auto& info : retired) {
-                RemovePlayerByDogName(info.name);
+        if (retired.empty()) {
+            return;
+        }
+
+        std::vector<RetiredPlayerInfo> retired_infos;
+        for (const auto& info : retired) {
+            retired_infos.push_back(RetiredPlayerInfo{info.name, info.score, info.play_time_seconds});
+
+            model::GameSession* session = game_.FindSessionByDogId(info.id);
+            if (session) {
+                std::string map_id = *session->GetMap()->GetId();
+                if (Player* player = players_.FindByDogIdAndMapId(info.id, map_id)) {
+                    tokens_.RemoveByPlayer(*player);
+                    players_.Remove(info.id, map_id);
+                }
+                session->RemoveDog(info.id);
             }
-            if (listener_) {
-                std::vector<RetiredPlayerInfo> retired_infos;
-                for (const auto& info : retired) {
-                    retired_infos.push_back(RetiredPlayerInfo{info.name, info.score, info.play_time_seconds});
-                }
-                try {
-                    listener_->OnPlayersRetired(retired_infos);
-                } catch (const std::exception&) {
-                    
-                }
+        }
+
+        if (listener_) {
+            try {
+                listener_->OnPlayersRetired(retired_infos);
+            } catch (const std::exception&) {
+                // Сбой сохранения в БД не должен прерывать игровой цикл.
             }
         }
     }
@@ -126,11 +136,6 @@ public:
 
     void SetListener(ApplicationListener* listener) noexcept {
         listener_ = listener;
-    }
-
-private:
-    void RemovePlayerByDogName(const std::string& dog_name) {
-        tokens_.RemoveByDogName(dog_name);
     }
 
 private:

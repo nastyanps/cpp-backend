@@ -17,7 +17,6 @@ void Map::AddOffice(Office office) {
     try {
         warehouse_id_to_index_.emplace(o.GetId(), index);
     } catch (...) {
-        // Удаляем офис из вектора, если не удалось вставить в unordered_map
         offices_.pop_back();
         throw;
     }
@@ -91,15 +90,12 @@ std::vector<GameSession::RetiredDogInfo> GameSession::Tick(
     }
 
     std::vector<RetiredDogInfo> retired;
-    for (auto it = dogs_.begin(); it != dogs_.end();) {
-        if ((*it)->GetIdleTime() >= retirement_time) {
+    for (const auto& dog_ptr : dogs_) {
+        if (dog_ptr->GetIdleTime() >= retirement_time) {
             double play_time_seconds =
-                std::chrono::duration<double>((*it)->GetTotalTime()).count();
+                std::chrono::duration<double>(dog_ptr->GetTotalTime()).count();
             retired.push_back(RetiredDogInfo{
-                (*it)->GetName(), (*it)->GetScore(), play_time_seconds});
-            it = dogs_.erase(it);
-        } else {
-            ++it;
+                dog_ptr->GetId(), dog_ptr->GetName(), dog_ptr->GetScore(), play_time_seconds});
         }
     }
     return retired;
@@ -156,7 +152,6 @@ std::vector<GameSession::DogMove> GameSession::ComputeMoves(std::chrono::millise
 }
 
 void GameSession::ProcessCollisions(const std::vector<DogMove>& moves) {
-    // Собиратель без перемещения не участвует в столкновениях.
     std::vector<DogMove> active_moves;
     std::copy_if(moves.begin(), moves.end(), std::back_inserter(active_moves),
                   [](const DogMove& m) {

@@ -57,6 +57,23 @@ public:
         return nullptr;
     }
 
+    void Remove(model::Dog::Id dog_id, const std::string& map_id) {
+        DogMapKey key{dog_id, map_id};
+        auto map_it = dog_map_id_to_player_.find(key);
+        if (map_it == dog_map_id_to_player_.end()) {
+            return;
+        }
+        Player* player_ptr = map_it->second;
+        dog_map_id_to_player_.erase(map_it);
+
+        for (auto it = players_.begin(); it != players_.end(); ++it) {
+            if (&*it == player_ptr) {
+                players_.erase(it);
+                return;
+            }
+        }
+    }
+
 private:
     using DogMapKey = std::pair<model::Dog::Id, std::string>;
     struct DogMapKeyHasher {
@@ -84,9 +101,9 @@ public:
         return nullptr;
     }
 
-    void RemoveByDogName(const std::string& dog_name) {
+    void RemoveByPlayer(const Player& player) {
         for (auto it = token_to_player_.begin(); it != token_to_player_.end(); ++it) {
-            if (it->second->GetDog()->GetName() == dog_name) {
+            if (it->second == &player) {
                 token_to_player_.erase(it);
                 return;
             }
