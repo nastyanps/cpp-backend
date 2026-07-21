@@ -95,7 +95,8 @@ std::vector<GameSession::RetiredDogInfo> GameSession::Tick(
             double play_time_seconds =
                 std::chrono::duration<double>(dog_ptr->GetTotalTime()).count();
             retired.push_back(RetiredDogInfo{
-                dog_ptr->GetId(), dog_ptr->GetName(), dog_ptr->GetScore(), play_time_seconds});
+                dog_ptr->GetId(), *map_->GetId(), dog_ptr->GetName(), dog_ptr->GetScore(),
+                play_time_seconds});
         }
     }
     return retired;

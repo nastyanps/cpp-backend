@@ -106,15 +106,13 @@ public:
         for (const auto& info : retired) {
             retired_infos.push_back(RetiredPlayerInfo{info.name, info.score, info.play_time_seconds});
 
-            model::GameSession* session = game_.FindSessionByDogId(info.id);
-            if (session) {
-                std::string map_id = *session->GetMap()->GetId();
-                if (Player* player = players_.FindByDogIdAndMapId(info.id, map_id)) {
-                    tokens_.RemoveByPlayer(*player);
-                    players_.Remove(info.id, map_id);
-                }
-                session->RemoveDog(info.id);
+            if (Player* player = players_.FindByDogIdAndMapId(info.id, info.map_id)) {
+                tokens_.RemoveByPlayer(*player);
+                players_.Remove(info.id, info.map_id);
             }
+            model::Map::Id map_id_tagged{info.map_id};
+            model::GameSession& session = game_.FindOrCreateSession(map_id_tagged);
+            session.RemoveDog(info.id);
         }
 
         if (listener_) {

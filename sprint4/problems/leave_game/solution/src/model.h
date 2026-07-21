@@ -351,6 +351,7 @@ class GameSession {
 public:
     struct RetiredDogInfo {
         Dog::Id id;
+	std::string map_id;
         std::string name;
         unsigned score;
         double play_time_seconds;
@@ -460,17 +461,6 @@ public:
     }
 
     GameSession& FindOrCreateSession(const Map::Id& map_id);
-
-    GameSession* FindSessionByDogId(Dog::Id dog_id) {
-        for (auto& session : sessions_) {
-            for (const auto& dog_ptr : session->GetDogs()) {
-                if (dog_ptr->GetId() == dog_id) {
-                    return session.get();
-                }
-            }
-        }
-        return nullptr;
-    }
 
     std::vector<GameSession::RetiredDogInfo> Tick(std::chrono::milliseconds time_delta);
 
