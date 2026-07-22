@@ -253,12 +253,12 @@ Position GameSession::GenerateRandomPointOnRoad() const {
         int max_x = std::max(start.x, end.x);
         std::uniform_int_distribution<int> x_dist(min_x, max_x);
         return Position{static_cast<double>(x_dist(gen)), static_cast<double>(start.y)};
-    } else {
-        int min_y = std::min(start.y, end.y);
-        int max_y = std::max(start.y, end.y);
-        std::uniform_int_distribution<int> y_dist(min_y, max_y);
-        return Position{static_cast<double>(start.x), static_cast<double>(y_dist(gen))};
     }
+
+    int min_y = std::min(start.y, end.y);
+    int max_y = std::max(start.y, end.y);
+    std::uniform_int_distribution<int> y_dist(min_y, max_y);
+    return Position{static_cast<double>(start.x), static_cast<double>(y_dist(gen))};
 }
 
 // Game

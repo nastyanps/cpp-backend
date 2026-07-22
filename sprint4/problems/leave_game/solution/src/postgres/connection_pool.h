@@ -4,6 +4,7 @@
 #include <memory>
 #include <mutex>
 #include <vector>
+#include <stdexcept>
 
 namespace postgres {
 
@@ -65,7 +66,9 @@ private:
     void ReturnConnection(ConnectionPtr&& conn) {
         {
             std::lock_guard lock{mutex_};
-            assert(used_connections_ != 0);
+            if (used_connections_ == 0) {
+                throw std::logic_error("ConnectionPool: returning more connections than were taken");
+            }
             pool_[--used_connections_] = std::move(conn);
         }
         cond_var_.notify_one();

@@ -29,6 +29,9 @@ StringResponse MakeJsonResponse(http::status status, std::string body, unsigned 
 }
 
 namespace {
+
+constexpr int kMaxRecordsItems = 100;
+
 std::string DirectionToString(model::Direction dir) {
     switch (dir) {
         case model::Direction::NORTH: return "U";
@@ -36,7 +39,6 @@ std::string DirectionToString(model::Direction dir) {
         case model::Direction::WEST: return "L";
         case model::Direction::EAST: return "R";
     }
-    assert(false);
     return "U";
 }
 
@@ -61,21 +63,47 @@ std::optional<int> ParseQueryParam(std::string_view query, std::string_view key)
     return std::nullopt;
 }
 
-std::string FormatPlayTime(double value) {
-    char buf[64];
-    std::snprintf(buf, sizeof(buf), "%.6f", value);
-    std::string s(buf);
-
-    size_t dot = s.find('.');
-    if (dot != std::string::npos) {
-        size_t last_non_zero = s.find_last_not_of('0');
-        if (last_non_zero == dot) {
-            s.erase(dot);
+json::array BuildRoadsJson(const model::Map::Roads& roads) {
+    json::array result;
+    for (const auto& road : roads) {
+        json::object r;
+        r["x0"] = road.GetStart().x;
+        r["y0"] = road.GetStart().y;
+        if (road.IsHorizontal()) {
+            r["x1"] = road.GetEnd().x;
         } else {
-            s.erase(last_non_zero + 1);
+            r["y1"] = road.GetEnd().y;
         }
+        result.push_back(std::move(r));
     }
-    return s;
+    return result;
+}
+
+json::array BuildBuildingsJson(const model::Map::Buildings& buildings) {
+    json::array result;
+    for (const auto& building : buildings) {
+        json::object b;
+        b["x"] = building.GetBounds().position.x;
+        b["y"] = building.GetBounds().position.y;
+        b["w"] = building.GetBounds().size.width;
+        b["h"] = building.GetBounds().size.height;
+        result.push_back(std::move(b));
+    }
+    return result;
+}
+
+json::array BuildOfficesJson(const model::Map::Offices& offices) {
+    json::array result;
+    for (const auto& office : offices) {
+        json::object o;
+        o["id"] = *office.GetId();
+        o["x"] = office.GetPosition().x;
+        o["y"] = office.GetPosition().y;
+        o["offsetX"] = office.GetOffset().dx;
+        o["offsetY"] = office.GetOffset().dy;
+        result.push_back(std::move(o));
+    }
+    return result;
 }
 
 }  // namespace
@@ -164,43 +192,10 @@ StringResponse ApiHandler::HandleMapsRequest(const StringRequest& req, std::stri
         map_obj["id"] = *map->GetId();
         map_obj["name"] = map->GetName();
 
-        json::array roads;
-        for (const auto& road : map->GetRoads()) {
-            json::object r;
-            r["x0"] = road.GetStart().x;
-            r["y0"] = road.GetStart().y;
-            if (road.IsHorizontal()) {
-                r["x1"] = road.GetEnd().x;
-            } else {
-                r["y1"] = road.GetEnd().y;
-            }
-            roads.push_back(std::move(r));
-        }
-        map_obj["roads"] = std::move(roads);
+        map_obj["roads"] = BuildRoadsJson(map->GetRoads());
+        map_obj["buildings"] = BuildBuildingsJson(map->GetBuildings());
+        map_obj["offices"] = BuildOfficesJson(map->GetOffices());
 
-        json::array buildings;
-        for (const auto& building : map->GetBuildings()) {
-            json::object b;
-            b["x"] = building.GetBounds().position.x;
-            b["y"] = building.GetBounds().position.y;
-            b["w"] = building.GetBounds().size.width;
-            b["h"] = building.GetBounds().size.height;
-            buildings.push_back(std::move(b));
-        }
-        map_obj["buildings"] = std::move(buildings);
-
-        json::array offices;
-        for (const auto& office : map->GetOffices()) {
-            json::object o;
-            o["id"] = *office.GetId();
-            o["x"] = office.GetPosition().x;
-            o["y"] = office.GetPosition().y;
-            o["offsetX"] = office.GetOffset().dx;
-            o["offsetY"] = office.GetOffset().dy;
-            offices.push_back(std::move(o));
-        }
-        map_obj["offices"] = std::move(offices);
-	
 	if (const auto* loot_types = extra_data_.FindLootTypes(map_id)) {
     	    map_obj["lootTypes"] = *loot_types;
 	}
@@ -398,7 +393,7 @@ StringResponse ApiHandler::HandleTickRequest(const StringRequest& req) {
         auto value = json::parse(req.body());
         const auto& obj = value.as_object();
         time_delta_ms = obj.at("timeDelta").as_int64();
-    } catch (...) {
+    } catch (const std::exception&) {
         return MakeJsonResponse(http::status::bad_request,
                                  MakeErrorBody("invalidArgument", "Failed to parse tick request JSON"),
                                  version, keep_alive);
@@ -429,7 +424,7 @@ StringResponse ApiHandler::HandleRecordsRequest(const StringRequest& req, std::s
     int start = ParseQueryParam(query, "start").value_or(0);
     int max_items = ParseQueryParam(query, "maxItems").value_or(100);
 
-    if (max_items > 100) {
+    if (max_items > kMaxRecordsItems) {
         return MakeJsonResponse(http::status::bad_request,
                                  MakeErrorBody("badRequest", "maxItems exceeds 100"),
                                  version, keep_alive);
@@ -444,27 +439,15 @@ StringResponse ApiHandler::HandleRecordsRequest(const StringRequest& req, std::s
                                  version, keep_alive);
     }
 
-    std::string body = "[";
-    bool first = true;
+    json::array result;
     for (const auto& record : records) {
-        if (!first) {
-            body += ",";
-        }
-        first = false;
-
-        json::object name_only;
-        name_only["name"] = record.name;
-        std::string name_json = json::serialize(name_only["name"]);
-
-        body += "{\"name\":";
-        body += name_json;
-        body += ",\"score\":";
-        body += std::to_string(record.score);
-        body += ",\"playTime\":";
-        body += FormatPlayTime(record.play_time_seconds);
-        body += "}";
+        json::object entry;
+        entry["name"] = record.name;
+        entry["score"] = record.score;
+        entry["playTime"] = record.play_time_seconds;
+        result.push_back(std::move(entry));
     }
-    body += "]";
+    std::string body = json::serialize(result);
 
     StringResponse response{http::status::ok, version};
     response.set(http::field::content_type, "application/json");

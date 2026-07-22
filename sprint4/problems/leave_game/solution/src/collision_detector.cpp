@@ -1,5 +1,4 @@
 #include "collision_detector.h"
-#include <cassert>
 #include <algorithm>
 
 namespace collision_detector {
@@ -9,7 +8,9 @@ CollectionResult TryCollectPoint(geom::Point2D a, geom::Point2D b, geom::Point2D
     // Тут приходится использовать строгое равенство, а не приближённое,
     // пскольку при сборе заказов придётся учитывать перемещение даже на небольшое
     // расстояние.
-    assert(b.x != a.x || b.y != a.y);
+    if (b.x == a.x && b.y == a.y) {
+        return CollectionResult(0.0, -1.0);
+    }
     const double u_x = c.x - a.x;
     const double u_y = c.y - a.y;
     const double v_x = b.x - a.x;

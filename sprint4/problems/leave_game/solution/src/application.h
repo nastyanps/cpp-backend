@@ -8,6 +8,7 @@
 #include <string_view>
 #include <stdexcept>
 #include <chrono>
+#include <iostream>
 
 namespace app {
 
@@ -118,9 +119,10 @@ public:
         if (listener_) {
             try {
                 listener_->OnPlayersRetired(retired_infos);
-            } catch (const std::exception&) {
+            } catch (const std::exception& ex) {
                 // Сбой сохранения в БД не должен прерывать игровой цикл.
-            }
+                std::cerr << "Failed to save retired players: " << ex.what() << std::endl;
+	    }
         }
     }
 
