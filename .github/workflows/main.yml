@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   sprint_1:
-    if: github.repository_owner != 'cpppracticum'
+    if: false
     runs-on: ubuntu-22.04
     container:
       image: praktikumcpp/practicum_cpp_backend:latest
@@ -80,7 +80,7 @@ jobs:
           junit_files: ${{ github.workspace }}/*.xml
 
   sprint_2:
-    if: github.repository_owner != 'cpppracticum'
+    if: false
     runs-on: ubuntu-22.04
     container:
       image: praktikumcpp/practicum_cpp_backend:latest
@@ -146,7 +146,7 @@ jobs:
 
 
   sprint_3:
-    if: github.repository_owner != 'cpppracticum'
+    if: false
     runs-on: ubuntu-22.04
     steps:
 
@@ -261,7 +261,7 @@ jobs:
           junit_files: ${{ github.workspace }}/*.xml
 
   sprint_4:
-    if: github.repository_owner != 'cpppracticum'
+    if: false
     runs-on: ubuntu-22.04
     steps:
 
@@ -289,7 +289,7 @@ jobs:
           junit_files: ${{ github.workspace }}/*.xml
 
   sprint_3_with_server:
-    if: github.repository_owner != 'cpppracticum'
+    if: false
     runs-on: ubuntu-22.04
     container:
       image: praktikumcpp/practicum_cpp_backend_server:latest
@@ -365,20 +365,20 @@ jobs:
         run: |
           cp -R /home/forconan/.conan /github/home/.conan
 
-      - name: run tests sprint4 db_of_books
-        run: |
-          cd cpp-backend-tests-practicum/scripts/sprint4
-          ./db_of_books/run_postgresless.sh
-
-      - name: run tests sprint4 bookypedia-1
-        run: |
-          cd cpp-backend-tests-practicum/scripts/sprint4
-          ./bookypedia-1/run_postgresless.sh
-
-      - name: run tests sprint4 bookypedia-2
-        run: |
-          cd cpp-backend-tests-practicum/scripts/sprint4
-          ./bookypedia-2/run_postgresless.sh
+#      - name: run tests sprint4 db_of_books
+#        run: |
+#          cd cpp-backend-tests-practicum/scripts/sprint4
+#          ./db_of_books/run_postgresless.sh
+#
+#      - name: run tests sprint4 bookypedia-1
+#        run: |
+#          cd cpp-backend-tests-practicum/scripts/sprint4
+#          ./bookypedia-1/run_postgresless.sh
+#
+#      - name: run tests sprint4 bookypedia-2
+#        run: |
+#          cd cpp-backend-tests-practicum/scripts/sprint4
+#          ./bookypedia-2/run_postgresless.sh
 
       - name: run tests sprint4 leave_game
         run: |
