@@ -318,7 +318,7 @@ public:
         score_ += points;
     }
 
-    void UpdateActivity(std::chrono::milliseconds time_delta);
+    void UpdateActivity(std::chrono::milliseconds time_delta, bool was_moving);
 
     std::chrono::milliseconds GetIdleTime() const noexcept {
         return idle_time_;

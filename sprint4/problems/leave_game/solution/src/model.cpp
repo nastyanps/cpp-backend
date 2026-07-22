@@ -24,9 +24,8 @@ void Map::AddOffice(Office office) {
 
 // Dog
 
-void Dog::UpdateActivity(std::chrono::milliseconds time_delta) {
-    bool moving = (speed_.vx != 0.0 || speed_.vy != 0.0);
-    if (moving) {
+void Dog::UpdateActivity(std::chrono::milliseconds time_delta, bool was_moving) {
+    if (was_moving) {
         idle_time_ = std::chrono::milliseconds{0};
     } else {
         idle_time_ += time_delta;
@@ -81,12 +80,20 @@ Dog& GameSession::AddDog(const std::string& name) {
 
 std::vector<GameSession::RetiredDogInfo> GameSession::Tick(
     std::chrono::milliseconds time_delta, std::chrono::milliseconds retirement_time) {
+    
+    std::vector<bool> was_moving;
+    was_moving.reserve(dogs_.size());
+    for (const auto& dog_ptr : dogs_) {
+        Speed s = dog_ptr->GetSpeed();
+        was_moving.push_back(s.vx != 0.0 || s.vy != 0.0);
+    }
+
     auto moves = ComputeMoves(time_delta);
     GenerateLoot(time_delta);
     ProcessCollisions(moves);
 
-    for (auto& dog_ptr : dogs_) {
-        dog_ptr->UpdateActivity(time_delta);
+    for (size_t i = 0; i < dogs_.size(); ++i) {
+        dogs_[i]->UpdateActivity(time_delta, was_moving[i]);
     }
 
     std::vector<RetiredDogInfo> retired;
